@@ -1,6 +1,8 @@
 # My Hands-on outcome: successfully deploy Netflix clone
 ![Netflix App image](./images/image1.PNG)
+
 ![Image in Dockerhub](./images/image2.PNG)
+
 ![Pipeline stage view](./images/image3.PNG)
 
 
