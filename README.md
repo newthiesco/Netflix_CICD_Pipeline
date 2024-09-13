@@ -11,7 +11,7 @@
 
 
 
-![Pipeline stage view](./images/image4.PNG)
+![Blue Ocean stage view](./images/image4.PNG)
 
 
 # Deploying Netflix Clone using DevSecOps Approach
