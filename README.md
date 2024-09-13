@@ -10,6 +10,10 @@
 ![Pipeline stage view](./images/image3.PNG)
 
 
+
+![Pipeline stage view](./images/image4.PNG)
+
+
 # Deploying Netflix Clone using DevSecOps Approach
 ![Netflix-Project-Thumbnail](https://github.com/vijaygiduthuri/Netflix/assets/125960600/0a36313b-1ee8-4150-8541-fe9786fa94aa)
 
