@@ -1,0 +1,96 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('CLEAN WORKSPACE') {
+            steps {
+                cleanWs()
+            }
+        }
+        stage('GIT CHECKOUT') {
+            steps {
+                git branch: 'main', url: 'https://github.com/vijaygiduthuri/Netflix.git'
+            }
+        } 
+        
+        stage('OWASP SCAN') {
+            steps {
+                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', nvdCredentialsId: 'Owasp-API-Key', odcInstallation: 'DP-Check'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+        
+        stage('BUILD DOCKER IMAGE') {
+            steps {
+                sh "docker build -t netflix ."
+            }
+        }
+        
+        stage('TAG AND PUSH') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'docker-cred') {
+                        sh "docker tag netflix thiexco/netflix:latest"
+                        sh "docker push thiexco/netflix:latest"
+                    }
+                }
+            }
+        }
+        
+        stage('DOCKER SCOUT IMAGE ANALYSIS') {
+            steps {
+               script {
+                   withDockerRegistry(credentialsId: 'docker-cred') {
+                      sh "docker-scout quickview thiexco/netflix:latest"
+                      sh "docker-scout cves thiexco/netflix:latest"
+                      sh "docker-scout recommendations thiexco/netflix:latest"
+                   }
+               }
+            }
+        }
+        
+        stage('REMOVE EXISTING CONTAINER') {
+            steps {
+                script {
+                    // Remove the container if it already exists to avoid name conflicts
+                    sh '''
+                    if [ "$(docker ps -aq -f name=netflix)" ]; then
+                        docker stop netflix
+                        docker rm netflix
+                    fi
+                    '''
+                }
+            }
+        }
+        
+        stage('DEPLOY TO DOCKER CONTAINER') {
+            steps {
+                sh "docker run -itd --name netflix -p 4000:80 netflix:latest"
+            }
+        }
+    }
+    
+    post {
+        always {
+            emailext attachLog: true,
+                subject: "'${currentBuild.result}'",
+                body: """
+                    <html>
+                    <body>
+                        <div style="background-color: #FFA07A; padding: 10px; margin-bottom: 10px;">
+                            <p style="color: white; font-weight: bold;">Project: ${env.JOB_NAME}</p>
+                        </div>
+                        <div style="background-color: #90EE90; padding: 10px; margin-bottom: 10px;">
+                            <p style="color: white; font-weight: bold;">Build Number: ${env.BUILD_NUMBER}</p>
+                        </div>
+                        <div style="background-color: #87CEEB; padding: 10px; margin-bottom: 10px;">
+                            <p style="color: white; font-weight: bold;">URL: ${env.BUILD_URL}</p>
+                        </div>
+                    </body>
+                    </html>
+                """,
+                to: 'thiezco@gmail.com',
+                mimeType: 'text/html'
+        }
+    }
+}
